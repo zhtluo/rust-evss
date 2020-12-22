@@ -1,30 +1,31 @@
 use ark_ff::Field;
 use ark_poly::UVPolynomial;
-use ark_poly_commit::{LabeledCommitment, LabeledPolynomial, PolynomialCommitment};
+use ark_poly_commit::PolynomialCommitment;
 use ark_std::{iter::once, marker::PhantomData, vec::Vec};
 
 use rand_core::RngCore;
 
-use crate::ark_serde::{canonical_serialize, canonical_deserialize};
-use serde::{Serialize, Deserialize};
+use crate::ark_serde::{canonical_deserialize, canonical_serialize};
+use crate::helper::{label_polynomial, label_commit};
+use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct EVSSParams<F: Field, P: UVPolynomial<F>, PC: PolynomialCommitment<F, P>> {
     #[serde(serialize_with = "canonical_serialize")]
     #[serde(deserialize_with = "canonical_deserialize")]
-    committer_key: PC::CommitterKey,
+    pub committer_key: PC::CommitterKey,
     #[serde(serialize_with = "canonical_serialize")]
     #[serde(deserialize_with = "canonical_deserialize")]
-    verifier_key: PC::VerifierKey,
+    pub verifier_key: PC::VerifierKey,
     #[serde(serialize_with = "canonical_serialize")]
     #[serde(deserialize_with = "canonical_deserialize")]
-    polynomial: P,
+    pub polynomial: P,
     #[serde(serialize_with = "canonical_serialize")]
     #[serde(deserialize_with = "canonical_deserialize")]
-    commit: PC::Commitment,
+    pub commit: PC::Commitment,
     #[serde(serialize_with = "canonical_serialize")]
     #[serde(deserialize_with = "canonical_deserialize")]
-    rands: PC::Randomness,
+    pub rands: PC::Randomness,
 }
 
 impl<F: Field, P: UVPolynomial<F>, PC: PolynomialCommitment<F, P>> EVSSParams<F, P, PC> {
@@ -40,26 +41,26 @@ impl<F: Field, P: UVPolynomial<F>, PC: PolynomialCommitment<F, P>> EVSSParams<F,
 pub struct EVSSPublicParams<F: Field, P: UVPolynomial<F>, PC: PolynomialCommitment<F, P>> {
     #[serde(serialize_with = "canonical_serialize")]
     #[serde(deserialize_with = "canonical_deserialize")]
-    verifier_key: PC::VerifierKey,
+    pub verifier_key: PC::VerifierKey,
     #[serde(serialize_with = "canonical_serialize")]
     #[serde(deserialize_with = "canonical_deserialize")]
-    commit: PC::Commitment,
+    pub commit: PC::Commitment,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct EVSSShare<F: Field, P: UVPolynomial<F>, PC: PolynomialCommitment<F, P>> {
     #[serde(serialize_with = "canonical_serialize")]
     #[serde(deserialize_with = "canonical_deserialize")]
-    point: F,
+    pub point: F,
     #[serde(serialize_with = "canonical_serialize")]
     #[serde(deserialize_with = "canonical_deserialize")]
-    value: F,
+    pub value: F,
     #[serde(serialize_with = "canonical_serialize")]
     #[serde(deserialize_with = "canonical_deserialize")]
-    challenge: F,
+    pub challenge: F,
     #[serde(serialize_with = "canonical_serialize")]
     #[serde(deserialize_with = "canonical_deserialize")]
-    proof: PC::Proof,
+    pub proof: PC::Proof,
 }
 
 pub struct EVSS<F: Field, P: UVPolynomial<F>, PC: PolynomialCommitment<F, P>> {
@@ -70,14 +71,6 @@ pub struct EVSS<F: Field, P: UVPolynomial<F>, PC: PolynomialCommitment<F, P>> {
 
 impl<F: Field, P: UVPolynomial<F>, PC: PolynomialCommitment<F, P>> EVSS<F, P, PC> {
 
-    fn label_polynomial(polynomial: &P) -> LabeledPolynomial<F, P> {
-        LabeledPolynomial::new("".to_owned(), polynomial.clone(), None, None)
-    }
-
-    fn label_commit(commit: &PC::Commitment) -> LabeledCommitment<PC::Commitment> {
-        LabeledCommitment::new("".to_owned(), commit.clone(), None)
-    }
-
     pub fn setup<R: RngCore>(
         secret: F,
         degree: usize,
@@ -87,7 +80,7 @@ impl<F: Field, P: UVPolynomial<F>, PC: PolynomialCommitment<F, P>> EVSS<F, P, PC
         let vec: Vec<F> = (0..degree)
             .map(|i| if i == 0 { secret } else { F::rand(rng) })
             .collect();
-        let poly = Self::label_polynomial(&P::from_coefficients_vec(vec));
+        let poly = label_polynomial(&P::from_coefficients_vec(vec));
         let (ck, vk) = PC::trim(&pp, degree, 0, None)?;
         let (lc, r) = PC::commit(&ck, once(&poly), Some(rng))?;
         Ok(EVSSParams {
@@ -107,8 +100,8 @@ impl<F: Field, P: UVPolynomial<F>, PC: PolynomialCommitment<F, P>> EVSS<F, P, PC
         let ch = F::rand(rng);
         let pr = PC::open(
             &params.committer_key,
-            once(&Self::label_polynomial(&params.polynomial)),
-            once(&Self::label_commit(&params.commit)),
+            once(&label_polynomial(&params.polynomial)),
+            once(&label_commit::<F, P, PC>(&params.commit)),
             &point,
             ch,
             once(&params.rands),
@@ -129,7 +122,7 @@ impl<F: Field, P: UVPolynomial<F>, PC: PolynomialCommitment<F, P>> EVSS<F, P, PC
     ) -> Result<bool, PC::Error> {
         PC::check(
             &params.verifier_key,
-            once(&Self::label_commit(&params.commit)),
+            once(&label_commit::<F, P, PC>(&params.commit)),
             &share.point,
             once(share.value),
             &share.proof,
@@ -156,63 +149,5 @@ impl<F: Field, P: UVPolynomial<F>, PC: PolynomialCommitment<F, P>> EVSS<F, P, PC
         }
         res
     }
-}
 
-#[cfg(test)]
-mod tests {
-
-    use crate::*;
-
-    use ark_bls12_381::Bls12_381;
-    use ark_ec::PairingEngine;
-    use ark_ff::UniformRand;
-    use ark_poly::univariate::DensePolynomial;
-    use ark_poly_commit::marlin_pc::MarlinKZG10;
-    use ark_poly_commit::PolynomialCommitment;
-    use ark_std::test_rng;
-
-    use serde_json;
-
-    type F381 = <Bls12_381 as PairingEngine>::Fr;
-    type Poly381 = DensePolynomial<F381>;
-    type PC381 = MarlinKZG10<Bls12_381, Poly381>;
-    type EVSS381 = evss::EVSS<F381, Poly381, PC381>;
-    type EVSSParams381 = evss::EVSSParams<F381, Poly381, PC381>;
-    type EVSSPublicParams381 = evss::EVSSPublicParams<F381, Poly381, PC381>;
-    type EVSSShare381 = evss::EVSSShare<F381, Poly381, PC381>;
-
-    const DEGREE: usize = 10;
-    const INDEX_BEGIN: usize = 1;
-
-    #[test]
-    fn test_functionality() -> Result<(), <PC381 as PolynomialCommitment<F381, Poly381>>::Error> {
-        let rng = &mut test_rng();
-        let secret = F381::rand(rng);
-        let params = EVSS381::setup(secret, DEGREE, rng)?;
-        let mut shares = Vec::new();
-        for i in INDEX_BEGIN..INDEX_BEGIN + DEGREE + 1 {
-            shares.push(EVSS381::get_share(F381::from(i as u32), &params, rng)?);
-        }
-        for sh in &shares {
-            assert!(EVSS381::check(&params.get_public_params(), sh, rng)?);
-        }
-        assert_eq!(secret, EVSS381::reconstruct(&shares));
-        Ok(())
-    }
-
-    #[test]
-    fn test_serde() -> Result<(), serde_json::Error> {
-        let rng = &mut test_rng();
-        let secret = F381::rand(rng);
-        let params = EVSS381::setup(secret, DEGREE, rng).unwrap();
-        let _: EVSSParams381 = serde_json::from_str(&serde_json::to_string(&params)?)?;
-        let _: EVSSPublicParams381 = serde_json::from_str(&serde_json::to_string(&params.get_public_params())?)?;
-        for i in INDEX_BEGIN..INDEX_BEGIN + DEGREE + 1 {
-            println!("{}", serde_json::to_string(
-                    &EVSS381::get_share(F381::from(i as u32), &params, rng).unwrap())?);
-            let _: EVSSShare381 = serde_json::from_str(&serde_json::to_string(
-                    &EVSS381::get_share(F381::from(i as u32), &params, rng).unwrap())?)?;
-        }
-        Ok(())
-    }
 }

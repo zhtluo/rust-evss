@@ -1,13 +1,13 @@
-use ark_ff::bytes::{ToBytes, FromBytes};
-use ark_serialize::{CanonicalSerialize, CanonicalDeserialize};
+use ark_ff::bytes::{FromBytes, ToBytes};
+use ark_serialize::{CanonicalDeserialize, CanonicalSerialize};
 use ark_std::{marker::PhantomData, vec::Vec};
 
+use serde::de::{self, Deserializer, SeqAccess, Visitor};
 use serde::ser::{self, Serializer};
-use serde::de::{self, Deserializer, Visitor, SeqAccess};
 
 use std::fmt;
 
-pub fn to_bytes<S, T>(data: &T, serializer: S) -> Result<S::Ok, S::Error> 
+pub fn to_bytes<S, T>(data: &T, serializer: S) -> Result<S::Ok, S::Error>
 where
     S: Serializer,
     T: ToBytes,
@@ -28,7 +28,7 @@ impl<'de, T: FromBytes> Visitor<'de> for BytesVisitor<T> {
     fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
         formatter.write_str("a chunk of bytes")
     }
-    fn visit_bytes<E>(self, v: &[u8]) -> Result<Self::Value, E> 
+    fn visit_bytes<E>(self, v: &[u8]) -> Result<Self::Value, E>
     where
         E: de::Error,
     {
@@ -37,7 +37,7 @@ impl<'de, T: FromBytes> Visitor<'de> for BytesVisitor<T> {
             Err(e) => Err(E::custom(format!("{}", e))),
         }
     }
-    fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error> 
+    fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error>
     where
         A: SeqAccess<'de>,
     {
@@ -59,12 +59,12 @@ where
     D: Deserializer<'de>,
     T: FromBytes,
 {
-    deserializer.deserialize_bytes(BytesVisitor::<T>{_t: PhantomData})
+    deserializer.deserialize_bytes(BytesVisitor::<T> { _t: PhantomData })
 }
 
-pub fn canonical_serialize<S, T>(data: &T, serializer: S) -> Result<S::Ok, S::Error> 
+pub fn canonical_serialize<S, T>(data: &T, serializer: S) -> Result<S::Ok, S::Error>
 where
-    S: Serializer, 
+    S: Serializer,
     T: CanonicalSerialize,
 {
     let mut buf: Vec<u8> = Vec::new();
@@ -83,7 +83,7 @@ impl<'de, T: CanonicalDeserialize> Visitor<'de> for CanonicalVisitor<T> {
     fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
         formatter.write_str("a chunk of bytes")
     }
-    fn visit_bytes<E>(self, v: &[u8]) -> Result<Self::Value, E> 
+    fn visit_bytes<E>(self, v: &[u8]) -> Result<Self::Value, E>
     where
         E: de::Error,
     {
@@ -92,7 +92,7 @@ impl<'de, T: CanonicalDeserialize> Visitor<'de> for CanonicalVisitor<T> {
             Err(e) => Err(E::custom(format!("{}", e))),
         }
     }
-    fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error> 
+    fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error>
     where
         A: SeqAccess<'de>,
     {
@@ -114,5 +114,5 @@ where
     D: Deserializer<'de>,
     T: CanonicalDeserialize,
 {
-    deserializer.deserialize_bytes(CanonicalVisitor::<T>{_t: PhantomData})
+    deserializer.deserialize_bytes(CanonicalVisitor::<T> { _t: PhantomData })
 }
