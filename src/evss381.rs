@@ -1,9 +1,9 @@
 use crate::*;
 
-use ark_bls12_381::Bls12_381;
-use ark_ec::PairingEngine;
-use ark_poly::univariate::DensePolynomial;
-use ark_poly_commit::marlin_pc::MarlinKZG10;
+pub use ark_bls12_381::Bls12_381;
+pub use ark_ec::PairingEngine;
+pub use ark_poly::univariate::DensePolynomial;
+pub use ark_poly_commit::marlin_pc::MarlinKZG10;
 
 pub type F381 = <Bls12_381 as PairingEngine>::Fr;
 pub type Poly381 = DensePolynomial<F381>;
@@ -13,13 +13,14 @@ pub type EVSSParams381 = evss::EVSSParams<F381, Poly381, PC381>;
 pub type EVSSPublicParams381 = evss::EVSSPublicParams<F381, Poly381, PC381>;
 pub type EVSSShare381 = evss::EVSSShare<F381, Poly381, PC381>;
 
+pub use ark_ff::{Field, UniformRand};
+pub use ark_poly_commit::PolynomialCommitment;
+
 #[cfg(test)]
 mod tests {
 
     use crate::evss381::*;
 
-    use ark_ff::UniformRand;
-    use ark_poly_commit::PolynomialCommitment;
     use ark_std::test_rng;
 
     use serde_json;
