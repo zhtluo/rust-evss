@@ -3,14 +3,15 @@ use crate::evss381::*;
 
 pub type Biaccumulator381 = biaccumulator::Biaccumulator<F381, PC381>;
 
+pub use ark_ff::UniformRand;
+pub use ark_poly_commit::PolynomialCommitment;
+
 #[cfg(test)]
 mod tests {
 
     use crate::evss381::*;
     use crate::biaccumulator381::*;
 
-    use ark_ff::UniformRand;
-    use ark_poly_commit::PolynomialCommitment;
     use ark_std::test_rng;
 
     const DEGREE: usize = 10;
