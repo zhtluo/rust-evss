@@ -9,7 +9,7 @@ use crate::ark_serde::{canonical_deserialize, canonical_serialize};
 use crate::helper::{label_polynomial, label_commit};
 use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct EVSSParams<F: Field, P: UVPolynomial<F>, PC: PolynomialCommitment<F, P>> {
     #[serde(serialize_with = "canonical_serialize")]
     #[serde(deserialize_with = "canonical_deserialize")]
@@ -37,7 +37,7 @@ impl<F: Field, P: UVPolynomial<F>, PC: PolynomialCommitment<F, P>> EVSSParams<F,
     }
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct EVSSPublicParams<F: Field, P: UVPolynomial<F>, PC: PolynomialCommitment<F, P>> {
     #[serde(serialize_with = "canonical_serialize")]
     #[serde(deserialize_with = "canonical_deserialize")]
@@ -47,7 +47,7 @@ pub struct EVSSPublicParams<F: Field, P: UVPolynomial<F>, PC: PolynomialCommitme
     pub commit: PC::Commitment,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct EVSSShare<F: Field, P: UVPolynomial<F>, PC: PolynomialCommitment<F, P>> {
     #[serde(serialize_with = "canonical_serialize")]
     #[serde(deserialize_with = "canonical_deserialize")]
