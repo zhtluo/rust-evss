@@ -9,7 +9,7 @@ use crate::ark_serde::{canonical_deserialize, canonical_serialize};
 use crate::helper::{label_polynomial, label_commit};
 use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize)]
 pub struct EVSSParams<F: Field, P: UVPolynomial<F>, PC: PolynomialCommitment<F, P>> {
     #[serde(serialize_with = "canonical_serialize")]
     #[serde(deserialize_with = "canonical_deserialize")]
@@ -37,7 +37,35 @@ impl<F: Field, P: UVPolynomial<F>, PC: PolynomialCommitment<F, P>> EVSSParams<F,
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+impl<F: Field, P: UVPolynomial<F>, PC: PolynomialCommitment<F, P>> std::fmt::Debug for EVSSParams<F, P, PC> {
+
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("EVSSParams")
+         .field("committer_key", &self.committer_key)
+         .field("verifier_key", &self.verifier_key)
+         .field("polynomial", &self.polynomial)
+         // .field("commit", &self.commit)
+         // .field("rands", &self.rands)
+         .finish()
+    }
+
+}
+
+impl<F: Field, P: UVPolynomial<F>, PC: PolynomialCommitment<F, P>> Clone for EVSSParams<F, P, PC> {
+
+    fn clone(&self) -> Self {
+        EVSSParams {
+            committer_key: self.committer_key.clone(),
+            verifier_key: self.verifier_key.clone(),
+            polynomial: self.polynomial.clone(),
+            commit: self.commit.clone(),
+            rands: self.rands.clone(),
+        }
+    }
+
+}
+
+#[derive(Serialize, Deserialize)]
 pub struct EVSSPublicParams<F: Field, P: UVPolynomial<F>, PC: PolynomialCommitment<F, P>> {
     #[serde(serialize_with = "canonical_serialize")]
     #[serde(deserialize_with = "canonical_deserialize")]
@@ -47,7 +75,29 @@ pub struct EVSSPublicParams<F: Field, P: UVPolynomial<F>, PC: PolynomialCommitme
     pub commit: PC::Commitment,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+impl<F: Field, P: UVPolynomial<F>, PC: PolynomialCommitment<F, P>> std::fmt::Debug for EVSSPublicParams<F, P, PC> {
+
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("EVSSPublicParams")
+         .field("verifier_key", &self.verifier_key)
+         // .field("commit", &self.commit)
+         .finish()
+    }
+
+}
+
+impl<F: Field, P: UVPolynomial<F>, PC: PolynomialCommitment<F, P>> Clone for EVSSPublicParams<F, P, PC> {
+
+    fn clone(&self) -> Self {
+        EVSSPublicParams {
+            verifier_key: self.verifier_key.clone(),
+            commit: self.commit.clone(),
+        }
+    }
+
+}
+
+#[derive(Serialize, Deserialize)]
 pub struct EVSSShare<F: Field, P: UVPolynomial<F>, PC: PolynomialCommitment<F, P>> {
     #[serde(serialize_with = "canonical_serialize")]
     #[serde(deserialize_with = "canonical_deserialize")]
@@ -61,6 +111,32 @@ pub struct EVSSShare<F: Field, P: UVPolynomial<F>, PC: PolynomialCommitment<F, P
     #[serde(serialize_with = "canonical_serialize")]
     #[serde(deserialize_with = "canonical_deserialize")]
     pub proof: PC::Proof,
+}
+
+impl<F: Field, P: UVPolynomial<F>, PC: PolynomialCommitment<F, P>> std::fmt::Debug for EVSSShare<F, P, PC> {
+
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("EVSSShare")
+         .field("point", &self.point)
+         .field("value", &self.value)
+         .field("challenge", &self.challenge)
+         // .field("proof", &self.proof)
+         .finish()
+    }
+
+}
+
+impl<F: Field, P: UVPolynomial<F>, PC: PolynomialCommitment<F, P>> Clone for EVSSShare<F, P, PC> {
+
+    fn clone(&self) -> Self {
+        EVSSShare {
+            point: self.point.clone(),
+            value: self.value.clone(),
+            challenge: self.challenge.clone(),
+            proof: self.proof.clone(),
+        }
+    }
+
 }
 
 pub struct EVSS<F: Field, P: UVPolynomial<F>, PC: PolynomialCommitment<F, P>> {
