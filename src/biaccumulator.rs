@@ -17,21 +17,24 @@ pub struct Biaccumulator<F: Field, PC: PolynomialCommitment<F, DensePolynomial<F
 impl<F: Field, PC: PolynomialCommitment<F, DensePolynomial<F>>> Biaccumulator<F, PC> {
 
     pub fn setup<R: RngCore>(
-        cred: &[F],
         degree: usize,
         rng: &mut R,
     ) -> Result<EVSSParams<F, DensePolynomial<F>, PC>, PC::Error> {
+        EVSS::<F, DensePolynomial<F>, PC>::setup(degree, rng)
+    }
+
+    pub fn commit<R: RngCore>(
+        pp: &EVSSParams<F, DensePolynomial<F>, PC>,
+        cred: &[F],
+        rng: &mut R,
+    ) -> Result<EVSSPolynomial<F, DensePolynomial<F>, PC>, PC::Error> {
         let mut p = DensePolynomial::<F>::from_coefficients_slice(&[F::from(1 as u32)]);
         for &c in cred {
             p = p.naive_mul(&DensePolynomial::<F>::from_coefficients_slice(&[-c, F::from(1 as u32)]));
         }
-        let pp = PC::setup(degree, None, rng)?;
         let poly = label_polynomial(&p);
-        let (ck, vk) = PC::trim(&pp, degree, 0, None)?;
-        let (lc, r) = PC::commit(&ck, once(&poly), Some(rng))?;
-        Ok(EVSSParams {
-            committer_key: ck,
-            verifier_key: vk,
+        let (lc, r) = PC::commit(&pp.committer_key, once(&poly), Some(rng))?;
+        Ok(EVSSPolynomial {
             polynomial: poly.polynomial().clone(),
             commit: lc[0].commitment().clone(),
             rands: r[0].clone(),
@@ -41,13 +44,15 @@ impl<F: Field, PC: PolynomialCommitment<F, DensePolynomial<F>>> Biaccumulator<F,
     pub fn create_witness<R: RngCore>(
         cred: F,
         params: &EVSSParams<F, DensePolynomial<F>, PC>,
+        poly: &EVSSPolynomial<F, DensePolynomial<F>, PC>,
         rng: &mut R,
     ) -> Result<EVSSShare<F, DensePolynomial<F>, PC>, PC::Error> {
-        EVSS::get_share(cred, params, rng)
+        EVSS::get_share(cred, params, poly, rng)
     }
 
     pub fn check<R: RngCore>(
         params: &EVSSPublicParams<F, DensePolynomial<F>, PC>,
+        commit: &EVSSCommit<F,DensePolynomial<F>, PC>,
         share: &EVSSShare<F, DensePolynomial<F>, PC>,
         rng: &mut R,
     ) -> Result<bool, PC::Error> {
@@ -56,7 +61,7 @@ impl<F: Field, PC: PolynomialCommitment<F, DensePolynomial<F>>> Biaccumulator<F,
         }
         PC::check(
             &params.verifier_key,
-            once(&label_commit::<F, DensePolynomial<F>, PC>(&params.commit)),
+            once(&label_commit::<F, DensePolynomial<F>, PC>(&commit.commit)),
             &share.point,
             once(share.value),
             &share.proof,
@@ -66,4 +71,3 @@ impl<F: Field, PC: PolynomialCommitment<F, DensePolynomial<F>>> Biaccumulator<F,
     }
 
 }
-

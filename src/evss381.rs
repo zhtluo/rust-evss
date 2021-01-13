@@ -32,13 +32,14 @@ mod tests {
     fn test_functionality() -> Result<(), <PC381 as PolynomialCommitment<F381, Poly381>>::Error> {
         let rng = &mut test_rng();
         let secret = F381::rand(rng);
-        let params = EVSS381::setup(secret, DEGREE, rng)?;
+        let params = EVSS381::setup(DEGREE, rng)?;
+        let poly = EVSS381::commit(&params, secret, rng)?;
         let mut shares = Vec::new();
         for i in INDEX_BEGIN..INDEX_BEGIN + DEGREE + 1 {
-            shares.push(EVSS381::get_share(F381::from(i as u32), &params, rng)?);
+            shares.push(EVSS381::get_share(F381::from(i as u32), &params, &poly, rng)?);
         }
         for sh in &shares {
-            assert!(EVSS381::check(&params.get_public_params(), sh, rng)?);
+            assert!(EVSS381::check(&params.get_public_params(), &poly.get_commit(), sh, rng)?);
         }
         assert_eq!(secret, EVSS381::reconstruct(&shares));
         Ok(())
@@ -48,7 +49,8 @@ mod tests {
     fn test_serde() -> Result<(), serde_json::Error> {
         let rng = &mut test_rng();
         let secret = F381::rand(rng);
-        let params = EVSS381::setup(secret, DEGREE, rng).unwrap();
+        let params = EVSS381::setup(DEGREE, rng).expect("");
+        let poly = EVSS381::commit(&params, secret, rng).expect("");
         let _: EVSSParams381 = serde_json::from_str(&serde_json::to_string(&params)?)?;
         let _: EVSSPublicParams381 =
             serde_json::from_str(&serde_json::to_string(&params.get_public_params())?)?;
@@ -56,11 +58,11 @@ mod tests {
             println!(
                 "{}",
                 serde_json::to_string(
-                    &EVSS381::get_share(F381::from(i as u32), &params, rng).unwrap()
+                    &EVSS381::get_share(F381::from(i as u32), &params, &poly, rng).unwrap()
                 )?
             );
             let _: EVSSShare381 = serde_json::from_str(&serde_json::to_string(
-                &EVSS381::get_share(F381::from(i as u32), &params, rng).unwrap(),
+                &EVSS381::get_share(F381::from(i as u32), &params, &poly, rng).unwrap(),
             )?)?;
         }
         Ok(())
