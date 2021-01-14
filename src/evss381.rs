@@ -13,7 +13,7 @@ pub type EVSSParams381 = evss::EVSSParams<F381, Poly381, PC381>;
 pub type EVSSPublicParams381 = evss::EVSSPublicParams<F381, Poly381, PC381>;
 pub type EVSSShare381 = evss::EVSSShare<F381, Poly381, PC381>;
 
-pub use ark_ff::{Field, UniformRand};
+pub use ark_ff::{Field, PrimeField, UniformRand};
 pub use ark_poly_commit::PolynomialCommitment;
 
 #[cfg(test)]
