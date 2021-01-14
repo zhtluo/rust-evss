@@ -11,6 +11,8 @@ pub type PC381 = MarlinKZG10<Bls12_381, Poly381>;
 pub type EVSS381 = evss::EVSS<F381, Poly381, PC381>;
 pub type EVSSParams381 = evss::EVSSParams<F381, Poly381, PC381>;
 pub type EVSSPublicParams381 = evss::EVSSPublicParams<F381, Poly381, PC381>;
+pub type EVSSPolynomial381 = evss::EVSSPolynomial<F381, Poly381, PC381>;
+pub type EVSSCommit381 = evss::EVSSCommit<F381, Poly381, PC381>;
 pub type EVSSShare381 = evss::EVSSShare<F381, Poly381, PC381>;
 
 pub use ark_ff::{Field, PrimeField, UniformRand};
