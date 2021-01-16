@@ -17,6 +17,8 @@ pub type EVSSShare381 = evss::EVSSShare<F381, Poly381, PC381>;
 
 pub use ark_ff::{Field, PrimeField, UniformRand};
 pub use ark_poly_commit::PolynomialCommitment;
+pub use ark_ff::bytes::{FromBytes, ToBytes};
+pub use ark_serialize::{CanonicalDeserialize, CanonicalSerialize};
 
 #[cfg(test)]
 mod tests {
