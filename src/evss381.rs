@@ -15,6 +15,7 @@ pub type EVSSPolynomial381 = evss::EVSSPolynomial<F381, Poly381, PC381>;
 pub type EVSSCommit381 = evss::EVSSCommit<F381, Poly381, PC381>;
 pub type EVSSShare381 = evss::EVSSShare<F381, Poly381, PC381>;
 pub type EVSSProof381 = <PC381 as PolynomialCommitment<F381, Poly381>>::Proof;
+pub type EVSSG1Affine381 = <Bls12_381 as PairingEngine>::G1Affine;
 
 pub use ark_ff::{Field, PrimeField, UniformRand};
 pub use ark_poly_commit::PolynomialCommitment;
